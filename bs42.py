@@ -6,10 +6,10 @@ with open('amazon_page.html', 'r', encoding='utf-8') as html_file:
 
 soup = BeautifulSoup(html_content, 'lxml')
 
+parent = soup.find('div', class_ = 'sg-col-20-of-24 s-matching-dir sg-col-16-of-20 sg-col sg-col-8-of-12 sg-col-12-of-16')
 
-link = soup.find_all('a', class_ = 'a-link-normal s-underline-text s-underline-link-text s-link-style a-text-normal')
-links = [element['href'] for element in link]
-for title in links:
-    s = 'www.amazon.com' + title
-    print(s)
-        
+variant = parent.find_all('span', class_ = 'a-price a-text-price')
+for var in variant:
+    price = var.find('span')
+    print(price.text)
+
