@@ -3,16 +3,16 @@ from bs4 import BeautifulSoup
 import csv
 from multiprocessing import Pool
 
-def links_scraper():
+def links_scraper(pages_to_scrape=10):
     base_url = 'https://www.amazon.com/s?k=ipad+pro&page='
 
     all_links = []
+ 
 
-    page_number = 1
-    while True:
+    for page_number in range(1, pages_to_scrape + 1):
         url = f'{base_url}{page_number}'
         payload = {
-            'api_key': '9d48909da2144bc72f125ac753ef5da4',
+            'api_key': 'bb199daad9be81ce5c5e39feb9bc9489',
             'url': url
         }
         response = requests.get('http://api.scraperapi.com', params=payload)
@@ -21,29 +21,26 @@ def links_scraper():
 
         links = parent.find_all('a', class_='a-link-normal s-underline-text s-underline-link-text s-link-style a-text-normal')
 
-        if not links:
-            break  # No more links found, exit the loop
-
         for element in links:
             link_element = element.get('href')
             link = 'https://www.amazon.com' + link_element
             all_links.append(link)
 
-        page_number += 1  # Move to the next page
 
-    return all_links
+    return all_links[:pages_to_scrape * 24]
 
 def amazon_scraper(url):
-    num = 0
+
 
     payload = {
-        'api_key': '9d48909da2144bc72f125ac753ef5da4',
+        'api_key': 'bb199daad9be81ce5c5e39feb9bc9489',
         'url': url
     }
+
     response = requests.get('http://api.scraperapi.com', params=payload)
     soup = BeautifulSoup(response.text, 'lxml')
     parent = soup.find('div', class_ = 'a-container')
-    
+
     result = {}  # Create an empty dictionary to store the results
     
     if parent:
@@ -75,23 +72,14 @@ def amazon_scraper(url):
                 result['price'] = price.text   # Store the price in the dictionary, or an empty string if None
         except (AttributeError, ValueError) as s:
             print(s)
-
-
-    if parent:
-        result['variant_price'] = None
-
-        try:
-            price2 = parent.find('span', class_='a-price a-text-price a-size-base')
-            variant_price = price2.find('span', class_='a-offscreen')
-            result['variant_price'] = variant_price.text
-        except (AttributeError, ValueError)as s:
-            print(s)
     
     if parent:
         result['stars'] = None
 
         try:
             stars = parent.find('span', class_='a-icon-alt')
+            if stars.text == 'Previous page':
+                result['stars'] = None
             result['stars'] = stars.text  # Store the reviews in the dictionary
         except (AttributeError, ValueError) as s:
             print(s)
@@ -139,7 +127,7 @@ if __name__ == "__main__":
     csv_file = 'amazon_products.csv'
 
     # Define the CSV header
-    csv_header = ['title', 'reviews', 'price', 'variant_price', 'stars', 'img_link', 'availability']
+    csv_header = ['title', 'reviews', 'price', 'stars', 'img_link', 'availability']
 
     # Write the data to the CSV file
     with open(csv_file, mode='w', newline='', encoding='utf-8') as file:
