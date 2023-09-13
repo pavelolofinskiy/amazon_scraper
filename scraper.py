@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 import csv
 from multiprocessing import Pool
 
-def links_scraper(pages_to_scrape=10):
+def links_scraper(pages_to_scrape=7):
     base_url = 'https://www.amazon.com/s?k=ipad+pro&page='
 
     all_links = []
@@ -23,7 +23,7 @@ def links_scraper(pages_to_scrape=10):
 
         for element in links:
             link_element = element.get('href')
-            link = 'https://www.amazon.com' + link_element
+            link = 'https://www.amazon.com' + link_element 
             all_links.append(link)
 
 
@@ -43,6 +43,8 @@ def amazon_scraper(url):
 
     result = {}  # Create an empty dictionary to store the results
     
+    result['product_link'] = url
+
     if parent:
         result['title'] = None
 
@@ -80,7 +82,9 @@ def amazon_scraper(url):
             stars = parent.find('span', class_='a-icon-alt')
             if stars.text == 'Previous page':
                 result['stars'] = None
-            result['stars'] = stars.text  # Store the reviews in the dictionary
+            else:
+                stars_text = stars.text.strip()
+                result['stars'] = stars_text
         except (AttributeError, ValueError) as s:
             print(s)
         
@@ -127,7 +131,7 @@ if __name__ == "__main__":
     csv_file = 'amazon_products.csv'
 
     # Define the CSV header
-    csv_header = ['title', 'reviews', 'price', 'stars', 'img_link', 'availability']
+    csv_header = ['product_link', 'title', 'reviews', 'price', 'stars', 'img_link', 'availability']
 
     # Write the data to the CSV file
     with open(csv_file, mode='w', newline='', encoding='utf-8') as file:
