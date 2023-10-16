@@ -1,18 +1,16 @@
 import requests
 from bs4 import BeautifulSoup
 import csv
-from multiprocessing import Pool
 
-def links_scraper(pages_to_scrape=7):
-    base_url = 'https://www.amazon.com/s?k=ipad+pro&page='
-
+def links_scraper(pages_to_scrape=1000):
+    base_url = 'https://www.amazon.com/s?k=ipad&page='
+    
     all_links = []
- 
 
     for page_number in range(1, pages_to_scrape + 1):
         url = f'{base_url}{page_number}'
         payload = {
-            'api_key': 'bb199daad9be81ce5c5e39feb9bc9489',
+            'api_key': '6524d877d2af9f6542fea964a8fe37f7',
             'url': url
         }
         response = requests.get('http://api.scraperapi.com', params=payload)
@@ -23,23 +21,20 @@ def links_scraper(pages_to_scrape=7):
 
         for element in links:
             link_element = element.get('href')
-            link = 'https://www.amazon.com' + link_element 
+            link = 'https://www.amazon.com' + link_element
             all_links.append(link)
 
-
-    return all_links[:pages_to_scrape * 24]
+    return all_links[:pages_to_scrape * 24] 
 
 def amazon_scraper(url):
-
-
     payload = {
-        'api_key': 'bb199daad9be81ce5c5e39feb9bc9489',
+        'api_key': '6524d877d2af9f6542fea964a8fe37f7',
         'url': url
     }
 
     response = requests.get('http://api.scraperapi.com', params=payload)
     soup = BeautifulSoup(response.text, 'lxml')
-    parent = soup.find('div', class_ = 'a-container')
+    parent = soup.find('div', class_='a-container')
 
     result = {}  # Create an empty dictionary to store the results
     
@@ -63,10 +58,9 @@ def amazon_scraper(url):
         except (AttributeError, ValueError) as s:
             print(s)
 
-
     if parent:
         result['price'] = None  # Initialize the 'price' key to an empty string
-        
+        scrape_pages = [1] + [i for i in range(26, pages_to_scrape + 1, 25)]
         try:
             price1 = parent.find('div', id='corePrice_desktop')
             if price1:
@@ -110,22 +104,18 @@ def amazon_scraper(url):
                 result['availability'] = availability_text
         except (AttributeError, ValueError) as s:
             print(s)
-
+    print(result)
 
     return result
 
-def scrape_product(link):
-    data = amazon_scraper(link)
-    return data
-
 if __name__ == "__main__":
-    all_links = links_scraper()  # Scrape pages until there are no more pages
+    all_links = links_scraper()  # Scrape all available pages
 
-    # Define the number of processes (adjust as needed)
-    num_processes = 4
+    scraped_data = []  # Store scraped data
 
-    with Pool(num_processes) as pool:
-        scraped_data = pool.map(scrape_product, all_links)
+    for link in all_links:
+        data = amazon_scraper(link)
+        scraped_data.append(data)
 
     # Define the CSV file name
     csv_file = 'amazon_products.csv'
